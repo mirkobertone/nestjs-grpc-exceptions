@@ -29,33 +29,17 @@ export class GrpcToHttpInterceptor implements NestInterceptor {
         )
           return throwError(() => err);
 
-        const statusCode =
-          HTTP_CODE_FROM_GRPC[err.code] || HttpStatus.INTERNAL_SERVER_ERROR;
-
-        let exception: { exceptionName: any; error: any; type?: string };
-        try {
-          exception = JSON.parse(err.details) as {
-            error: string | object;
-            type: string;
-            exceptionName: string;
-          };
-        } catch (parseError) {
-          return throwError(
-            () =>
-              new HttpException(
-                {
-                  message: err.details,
-                  statusCode,
-                  error: HttpStatus[statusCode],
-                },
-                statusCode,
-                { cause: err },
-              ),
-          );
-        }
+        const exception = JSON.parse(err.details) as {
+          error: string | object;
+          type: string;
+          exceptionName: string;
+        };
 
         if (exception.exceptionName !== RpcException.name)
           return throwError(() => err);
+
+        const statusCode =
+          HTTP_CODE_FROM_GRPC[err.code] || HttpStatus.INTERNAL_SERVER_ERROR;
 
         return throwError(
           () =>
